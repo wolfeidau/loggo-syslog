@@ -39,9 +39,12 @@ func NewSyslogWriter(p gsyslog.Priority, facility, tag string) loggo.Writer {
 
 // NewDefaultSyslogWriter returns a new writer that writes
 // log messages to syslog in a simple format tailored for syslog.
-// Note this defaults to using LOCAL7 facility which is pretty common.
-func NewDefaultSyslogWriter(level loggo.Level, tag string) loggo.Writer {
-	syslogger, err := gsyslog.NewLogger(convertLevel(level), "LOCAL7", tag)
+// Note this defaults to using LOCAL7.
+func NewDefaultSyslogWriter(level loggo.Level, tag, facility string) loggo.Writer {
+	if facility == "" {
+		facility = "LOCAL7"
+	}
+	syslogger, err := gsyslog.NewLogger(convertLevel(level), facility, tag)
 	if err != nil {
 		panic(err) // of course this will never happen
 	}
