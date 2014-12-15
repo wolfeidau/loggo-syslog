@@ -34,7 +34,8 @@ func NewSyslogWriter(p gsyslog.Priority, facility, tag string) loggo.Writer {
 	if err != nil {
 		panic(err)
 	}
-	return &syslogWriter{syslogger}
+	slw := &syslogWriter{syslogger}
+	return slw
 }
 
 // NewDefaultSyslogWriter returns a new writer that writes
@@ -44,7 +45,18 @@ func NewDefaultSyslogWriter(level loggo.Level, tag, facility string) loggo.Write
 	if facility == "" {
 		facility = "LOCAL7"
 	}
-	syslogger, err := gsyslog.NewLogger(convertLevel(level), facility, tag)
+	var syslogger gsyslog.Syslogger
+	var err error
+	// retry opening the syslog device as this may fail under load or in cases where the
+	// process is forked.
+	for i := 0; i < 3; i++ {
+		syslogger, err = gsyslog.NewLogger(convertLevel(level), facility, tag)
+		if err == nil {
+			continue
+		}
+		// back off for a second
+		time.Sleep(1 * time.Second)
+	}
 	if err != nil {
 		panic(err) // of course this will never happen
 	}

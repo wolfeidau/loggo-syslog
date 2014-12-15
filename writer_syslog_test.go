@@ -28,7 +28,7 @@ func (*loggerSuite) TestSyslogWriter(c *gc.C) {
 	c.Assert(level, gc.Equals, loggo.TRACE)
 	c.Assert(defaultWriter, gc.NotNil)
 
-	err = loggo.RegisterWriter("default", NewDefaultSyslogWriter(loggo.INFO, ""), loggo.INFO)
+	err = loggo.RegisterWriter("default", NewDefaultSyslogWriter(loggo.INFO, "", "LOCAL7"), loggo.INFO)
 	c.Assert(err, gc.IsNil)
 
 	loggo.GetLogger("").Infof("some test %s", "hello")
