@@ -63,9 +63,9 @@ func NewDefaultSyslogWriter(level loggo.Level, tag, facility string) loggo.Write
 	return &syslogWriter{syslogger}
 }
 
-func (slog *syslogWriter) Write(level loggo.Level, module, filename string, line int, timestamp time.Time, message string) {
-	logLine := formatter.Format(level, module, filename, line, timestamp, message)
-	slog.syslogger.WriteLevel(convertLevel(level), []byte(logLine))
+func (slog *syslogWriter) Write(entry loggo.Entry) {
+	logLine := formatter.Format(entry.Level, entry.Module, entry.Filename, entry.Line, entry.Timestamp, entry.Message)
+	slog.syslogger.WriteLevel(convertLevel(entry.Level), []byte(logLine))
 }
 
 func convertLevel(level loggo.Level) gsyslog.Priority {
