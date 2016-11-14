@@ -9,22 +9,20 @@ import (
 	"github.com/juju/loggo"
 )
 
-var formatter = &SyslogFormatter{}
-
-// SyslogFormatter provides a simple concatenation of message components.
-type SyslogFormatter struct{}
+type Formatter func(loggo.Entry) string
 
 // Format returns the parameters separated by spaces except for filename and
 // line which are separated by a colon.
-func (*SyslogFormatter) Format(level loggo.Level, module, filename string, line int, timestamp time.Time, message string) string {
+func DefaultFormatter(entry loggo.Entry) string {
 
 	// Just get the basename from the filename
-	filename = filepath.Base(filename)
-	return fmt.Sprintf("%s %s:%d %s", module, filename, line, message)
+	filename := filepath.Base(entry.Filename)
+	return fmt.Sprintf("%s %s:%d %s", entry.Module, filename, entry.Line, entry.Message)
 }
 
 type syslogWriter struct {
 	syslogger gsyslog.Syslogger
+	Formatter Formatter
 }
 
 // NewSyslogWriter returns a new writer that writes
@@ -34,7 +32,7 @@ func NewSyslogWriter(p gsyslog.Priority, facility, tag string) loggo.Writer {
 	if err != nil {
 		panic(err)
 	}
-	slw := &syslogWriter{syslogger}
+	slw := &syslogWriter{syslogger, DefaultFormatter}
 	return slw
 }
 
@@ -60,11 +58,11 @@ func NewDefaultSyslogWriter(level loggo.Level, tag, facility string) loggo.Write
 	if err != nil {
 		panic(err) // of course this will never happen
 	}
-	return &syslogWriter{syslogger}
+	return &syslogWriter{syslogger, DefaultFormatter}
 }
 
 func (slog *syslogWriter) Write(entry loggo.Entry) {
-	logLine := formatter.Format(entry.Level, entry.Module, entry.Filename, entry.Line, entry.Timestamp, entry.Message)
+	logLine := slog.Formatter(entry)
 	slog.syslogger.WriteLevel(convertLevel(entry.Level), []byte(logLine))
 }
 
